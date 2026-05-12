@@ -13,9 +13,25 @@ function calcularPuntos(pred_local, pred_visit, real_local, real_visit) {
   return 0;
 }
 
+const APORTE_POR_USUARIO = 5000;
+const DISTRIBUCION_PREMIOS = [0.5, 0.3, 0.2];
+
+function formatearCRC(monto) {
+  return new Intl.NumberFormat("es-CR", {
+    style: "currency",
+    currency: "CRC",
+    maximumFractionDigits: 0,
+  }).format(monto);
+}
+
 export default function Tabla() {
   const [tabla, setTabla] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const totalRecaudado = tabla.length * APORTE_POR_USUARIO;
+  const premiosTop = DISTRIBUCION_PREMIOS.map((parte) =>
+    Math.round(totalRecaudado * parte),
+  );
 
   useEffect(() => {
     async function cargar() {
@@ -94,6 +110,30 @@ export default function Tabla() {
           🏆 Tabla de Posiciones
         </h1>
 
+        <div className="mb-4 bg-metal-900 rounded-xl border border-blood-800 p-4">
+          <p className="text-xs font-display uppercase tracking-widest text-metal-400">
+            Recaudación total
+          </p>
+          <p className="font-metal text-2xl text-blood-400 leading-none mt-1">
+            {formatearCRC(totalRecaudado)}
+          </p>
+          <p className="text-xs text-metal-500 mt-1">
+            {tabla.length} usuarios registrados x{" "}
+            {formatearCRC(APORTE_POR_USUARIO)}
+          </p>
+          <div className="mt-3 flex gap-2 flex-wrap text-xs font-display tracking-wide">
+            <span className="bg-metal-800 border border-metal-700 rounded px-2 py-1 text-metal-300">
+              🥇 1ro: {formatearCRC(premiosTop[0] || 0)}
+            </span>
+            <span className="bg-metal-800 border border-metal-700 rounded px-2 py-1 text-metal-300">
+              🥈 2do: {formatearCRC(premiosTop[1] || 0)}
+            </span>
+            <span className="bg-metal-800 border border-metal-700 rounded px-2 py-1 text-metal-300">
+              🥉 3ro: {formatearCRC(premiosTop[2] || 0)}
+            </span>
+          </div>
+        </div>
+
         <div className="bg-metal-900 rounded-xl border border-metal-700 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
@@ -135,6 +175,11 @@ export default function Tabla() {
                   </td>
                   <td className="py-3 px-4 font-display font-semibold text-metal-100 tracking-wide">
                     {row.username}
+                    {i < 3 && (
+                      <span className="block text-[11px] text-green-400 font-display tracking-wide mt-0.5">
+                        Ganando: {formatearCRC(premiosTop[i] || 0)}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-center font-metal font-bold text-blood-400 text-lg">
                     {row.puntos}
