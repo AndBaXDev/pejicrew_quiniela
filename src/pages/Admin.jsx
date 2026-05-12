@@ -13,8 +13,6 @@ const FASES = [
   "final",
 ];
 
-dfdfsfdf;
-
 const FASES_LABELS = {
   grupos: "Fase de Grupos",
   octavos: "Octavos de Final",
