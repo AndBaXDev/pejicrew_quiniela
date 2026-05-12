@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 export default function Login() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const logoSrc = `${import.meta.env.BASE_URL}logo.png`;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,9 +35,9 @@ export default function Login() {
       <div className="bg-metal-900 border border-metal-700 rounded-xl shadow-2xl w-full max-w-sm p-8">
         <div className="text-center mb-8">
           <img
-            src="/logo.png"
+            src={logoSrc}
             alt="PejiCrew"
-            className="h-20 w-20 object-contain mx-auto mb-4"
+            className="h-16 w-16 sm:h-20 sm:w-20 object-contain mx-auto mb-4"
             onError={(e) => {
               e.target.style.display = "none";
             }}

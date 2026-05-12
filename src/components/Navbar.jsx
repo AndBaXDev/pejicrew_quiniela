@@ -5,6 +5,7 @@ export default function Navbar() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const logoSrc = `${import.meta.env.BASE_URL}logo.png`;
 
   async function handleSignOut() {
     await signOut();
@@ -25,7 +26,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <Link to="/" className="flex items-center gap-2 mr-4">
               <img
-                src="/logo.png"
+                src={logoSrc}
                 alt="PejiCrew"
                 className="h-10 w-10 object-contain rounded"
                 onError={(e) => {
