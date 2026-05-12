@@ -15,6 +15,7 @@ import ChangePassword from "./pages/ChangePassword";
 import Partidos from "./pages/Partidos";
 import Tabla from "./pages/Tabla";
 import Admin from "./pages/Admin";
+import { HashRouter } from "react-router-dom";
 
 function AuthRedirector() {
   const { passwordRecovery } = useAuth();
@@ -32,7 +33,7 @@ function AuthRedirector() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <HashRouter>
         <AuthRedirector />
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -72,7 +73,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   );
 }
