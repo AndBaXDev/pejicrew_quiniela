@@ -70,7 +70,7 @@ serve(async (req) => {
         const notificationPayload = {
             title: title || "🏟️ Quiniela",
             body,
-            url: url || "/",
+            url: url || "https://andbaxdev.github.io/pejicrew_quiniela/#/",
         };
 
         let successCount = 0;

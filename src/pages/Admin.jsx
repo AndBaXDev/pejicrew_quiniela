@@ -231,7 +231,11 @@ export default function Admin() {
     if (partido) {
       const titulo = "⚽ Resultado Registrado";
       const cuerpo = `${partido.equipo_local} ${gl} - ${gv} ${partido.equipo_visitante}`;
-      await enviarNotificacionPush(titulo, cuerpo, "/#/");
+      await enviarNotificacionPush(
+        titulo,
+        cuerpo,
+        "https://andbaxdev.github.io/pejicrew_quiniela/#/",
+      );
     }
 
     cargarPartidos();

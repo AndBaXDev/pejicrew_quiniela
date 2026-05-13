@@ -74,7 +74,11 @@ export async function registrarPushNotifications() {
   }
 }
 
-export async function enviarNotificacionPush(titulo, cuerpo, url = '/') {
+export async function enviarNotificacionPush(
+  titulo,
+  cuerpo,
+  url = 'https://andbaxdev.github.io/pejicrew_quiniela/#/'
+) {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
