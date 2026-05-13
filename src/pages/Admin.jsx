@@ -576,7 +576,7 @@ export default function Admin() {
                         </span>
                       </div>
 
-                      <div className="grid sm:grid-cols-[auto_1fr_auto] gap-3 items-center">
+                      <div className="flex flex-col gap-2">
                         <label className="inline-flex items-center gap-2 text-sm text-metal-300 font-display">
                           <input
                             type="checkbox"
@@ -589,25 +589,27 @@ export default function Admin() {
                           Pago confirmado
                         </label>
 
-                        <input
-                          type="datetime-local"
-                          value={edicion.fecha}
-                          onChange={(e) =>
-                            onChangeFechaPago(perfil.id, e.target.value)
-                          }
-                          disabled={!pagado}
-                          className={`w-full bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600 ${
-                            !pagado ? "opacity-50 cursor-not-allowed" : ""
-                          }`}
-                        />
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="datetime-local"
+                            value={edicion.fecha}
+                            onChange={(e) =>
+                              onChangeFechaPago(perfil.id, e.target.value)
+                            }
+                            disabled={!pagado}
+                            className={`min-w-0 flex-1 bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600 ${
+                              !pagado ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          />
 
-                        <button
-                          onClick={() => guardarPago(perfil.id)}
-                          disabled={guardando}
-                          className="bg-blood-700 hover:bg-blood-600 disabled:opacity-50 text-white font-display font-semibold py-2 px-4 rounded tracking-widest uppercase text-xs transition-colors"
-                        >
-                          {guardando ? "Guardando..." : "Guardar"}
-                        </button>
+                          <button
+                            onClick={() => guardarPago(perfil.id)}
+                            disabled={guardando}
+                            className="flex-shrink-0 bg-blood-700 hover:bg-blood-600 disabled:opacity-50 text-white font-display font-semibold py-2 px-4 rounded tracking-widest uppercase text-xs transition-colors"
+                          >
+                            {guardando ? "..." : "Guardar"}
+                          </button>
+                        </div>
                       </div>
 
                       {perfil.paid_at && (
