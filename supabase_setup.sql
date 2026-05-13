@@ -12,8 +12,60 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   username    TEXT NOT NULL,
   is_admin    BOOLEAN NOT NULL DEFAULT FALSE,
+   BOOLEAN NOT NULL DEFAULT FALSE,
+  paid_at TIMESTAMPTZ,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migración para proyectos existentes
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS is_paid BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+
+-- Compatibilidad: renombra columnas antiguas en español si existen
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+      AND column_name = 'pago_confirmado'
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+      AND column_name = 'is_paid'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.profiles RENAME COLUMN pago_confirmado TO is_paid';
+  END IF;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+      AND column_name = 'pago_confirmado_at'
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+      AND column_name = 'paid_at'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.profiles RENAME COLUMN pago_confirmado_at TO paid_at';
+  END IF;
+END;
+$$;
 
 -- Trigger para crear el perfil automáticamente al registrar usuario
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -81,10 +133,29 @@ CREATE POLICY "profiles_select_authenticated"
   USING (true);
 
 -- Cada usuario puede actualizar solo su propio perfil
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 CREATE POLICY "profiles_update_own"
   ON public.profiles FOR UPDATE
   TO authenticated
   USING (auth.uid() = id);
+
+-- Admin puede actualizar perfiles de cualquier usuario (ej: confirmar pagos)
+DROP POLICY IF EXISTS "profiles_update_admin" ON public.profiles;
+CREATE POLICY "profiles_update_admin"
+  ON public.profiles FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = TRUE
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = TRUE
+    )
+  );
 
 
 -- 4.2 partidos
@@ -140,16 +211,37 @@ CREATE POLICY "predicciones_select_authenticated"
   USING (true);
 
 -- Cada usuario puede insertar sus propias predicciones
+DROP POLICY IF EXISTS "predicciones_insert_own" ON public.predicciones;
 CREATE POLICY "predicciones_insert_own"
   ON public.predicciones FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_paid = TRUE
+    )
+  );
 
 -- Cada usuario puede actualizar solo sus propias predicciones
+DROP POLICY IF EXISTS "predicciones_update_own" ON public.predicciones;
 CREATE POLICY "predicciones_update_own"
   ON public.predicciones FOR UPDATE
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_paid = TRUE
+    )
+  )
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_paid = TRUE
+    )
+  );
 
 -- Cada usuario puede eliminar sus propias predicciones
 CREATE POLICY "predicciones_delete_own"

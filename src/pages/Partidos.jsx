@@ -70,7 +70,7 @@ function PuntosBadge({ puntos }) {
 }
 
 export default function Partidos() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [partidos, setPartidos] = useState([]);
   const [predicciones, setPredicciones] = useState({});
   const [editando, setEditando] = useState({});
@@ -79,6 +79,7 @@ export default function Partidos() {
   const [filtroFase, setFiltroFase] = useState(null); // null = todas
   const [filtroFecha, setFiltroFecha] = useState(null); // null = todas | 'hoy' | 'yyyy-MM-dd'
   const [notifVisible, setNotifVisible] = useState(true);
+  const puedePredecir = !!profile?.is_paid;
 
   const cargarDatos = useCallback(async () => {
     setLoading(true);
@@ -117,6 +118,10 @@ export default function Partidos() {
   }
 
   async function guardarPrediccion(partido) {
+    if (!puedePredecir) {
+      cancelarEdicion(partido.id);
+      return;
+    }
     if (esBloqueado(partido)) {
       cancelarEdicion(partido.id);
       return;
@@ -249,8 +254,17 @@ export default function Partidos() {
           )}
         </div>
 
+        {!puedePredecir && (
+          <div className="mb-5 bg-blood-900/30 border border-blood-700 rounded-xl px-4 py-3">
+            <p className="text-blood-300 font-display font-semibold text-sm tracking-wide">
+              Tu pago aún no ha sido confirmado por un administrador. Cuando se
+              confirme, podrás crear y editar predicciones.
+            </p>
+          </div>
+        )}
+
         {/* Banner de notificaciones: partidos próximos sin predicción */}
-        {notifVisible && proximosSinPred.length > 0 && (
+        {puedePredecir && notifVisible && proximosSinPred.length > 0 && (
           <div className="mb-5 bg-yellow-900/30 border border-yellow-700 rounded-xl px-4 py-3 flex gap-3 items-start">
             <span className="text-yellow-400 text-lg mt-0.5">⚠️</span>
             <div className="flex-1 min-w-0">
@@ -488,7 +502,7 @@ export default function Partidos() {
                                   Sin predicción
                                 </span>
                               )}
-                              {!terminado && !bloqueado && (
+                              {!terminado && !bloqueado && puedePredecir && (
                                 <button
                                   onClick={() => iniciarEdicion(partido)}
                                   className="ml-2 text-xs bg-blood-800 hover:bg-blood-700 text-white px-3 py-1 rounded transition-colors font-display font-semibold tracking-wider uppercase"

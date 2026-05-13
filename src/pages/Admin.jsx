@@ -29,10 +29,18 @@ const PARTIDO_VACIO = {
   fase: "grupos",
 };
 
+function toDatetimeLocalValue(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function Admin() {
   const [partidos, setPartidos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("resultados"); // 'resultados' | 'nuevo'
+  const [tab, setTab] = useState("resultados"); // 'resultados' | 'nuevo' | 'pagos'
   const [nuevoPartido, setNuevoPartido] = useState(PARTIDO_VACIO);
   const [creando, setCreando] = useState(false);
   const [errorCrear, setErrorCrear] = useState("");
@@ -40,6 +48,11 @@ export default function Admin() {
   const [guardandoRes, setGuardandoRes] = useState({});
   const [eliminando, setEliminando] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null); // partido id a confirmar
+  const [perfiles, setPerfiles] = useState([]);
+  const [loadingPerfiles, setLoadingPerfiles] = useState(true);
+  const [pagosEdicion, setPagosEdicion] = useState({});
+  const [guardandoPago, setGuardandoPago] = useState({});
+  const [errorPagos, setErrorPagos] = useState("");
 
   const cargarPartidos = useCallback(async () => {
     setLoading(true);
@@ -56,9 +69,36 @@ export default function Admin() {
     setLoading(false);
   }, []);
 
+  const cargarPerfiles = useCallback(async () => {
+    setLoadingPerfiles(true);
+    setErrorPagos("");
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username, is_admin, is_paid, paid_at, created_at")
+      .order("username");
+
+    if (error) {
+      setErrorPagos("Error al cargar usuarios: " + error.message);
+      setLoadingPerfiles(false);
+      return;
+    }
+
+    setPerfiles(data || []);
+    const mapa = {};
+    for (const perfil of data || []) {
+      mapa[perfil.id] = {
+        confirmado: !!perfil.is_paid,
+        fecha: toDatetimeLocalValue(perfil.paid_at),
+      };
+    }
+    setPagosEdicion(mapa);
+    setLoadingPerfiles(false);
+  }, []);
+
   useEffect(() => {
     cargarPartidos();
-  }, [cargarPartidos]);
+    cargarPerfiles();
+  }, [cargarPartidos, cargarPerfiles]);
 
   async function crearPartido(e) {
     e.preventDefault();
@@ -118,6 +158,65 @@ export default function Admin() {
     setEliminando((prev) => ({ ...prev, [partidoId]: false }));
     setConfirmDelete(null);
     cargarPartidos();
+  }
+
+  function onTogglePago(perfilId, confirmado) {
+    setPagosEdicion((prev) => {
+      const actual = prev[perfilId] || { confirmado: false, fecha: "" };
+      return {
+        ...prev,
+        [perfilId]: {
+          confirmado,
+          fecha: confirmado
+            ? actual.fecha || toDatetimeLocalValue(new Date().toISOString())
+            : "",
+        },
+      };
+    });
+  }
+
+  function onChangeFechaPago(perfilId, fecha) {
+    setPagosEdicion((prev) => ({
+      ...prev,
+      [perfilId]: {
+        ...(prev[perfilId] || { confirmado: true, fecha: "" }),
+        fecha,
+      },
+    }));
+  }
+
+  async function guardarPago(perfilId) {
+    const edicion = pagosEdicion[perfilId];
+    if (!edicion) return;
+
+    const payload = edicion.confirmado
+      ? {
+          is_paid: true,
+          paid_at: edicion.fecha
+            ? new Date(edicion.fecha).toISOString()
+            : new Date().toISOString(),
+        }
+      : {
+          is_paid: false,
+          paid_at: null,
+        };
+
+    setGuardandoPago((prev) => ({ ...prev, [perfilId]: true }));
+    setErrorPagos("");
+
+    const { error } = await supabase
+      .from("profiles")
+      .update(payload)
+      .eq("id", perfilId);
+
+    setGuardandoPago((prev) => ({ ...prev, [perfilId]: false }));
+
+    if (error) {
+      setErrorPagos("Error al guardar pago: " + error.message);
+      return;
+    }
+
+    await cargarPerfiles();
   }
 
   const inputClass =
@@ -180,6 +279,12 @@ export default function Admin() {
             className={tab === "nuevo" ? tabActive : tabInactive}
           >
             + Nuevo
+          </button>
+          <button
+            onClick={() => setTab("pagos")}
+            className={tab === "pagos" ? tabActive : tabInactive}
+          >
+            Pagos
           </button>
         </div>
 
@@ -398,6 +503,129 @@ export default function Admin() {
               </div>
             )}
           </>
+        )}
+
+        {tab === "pagos" && (
+          <div className="bg-metal-900 rounded-xl border border-metal-700 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display font-bold text-metal-200 tracking-widest uppercase text-sm">
+                Estado de Pagos
+              </h2>
+              <button
+                onClick={cargarPerfiles}
+                className="text-xs bg-metal-800 border border-metal-600 hover:border-blood-700 text-metal-200 px-3 py-1.5 rounded transition-colors font-display font-semibold tracking-wider uppercase"
+              >
+                Recargar
+              </button>
+            </div>
+
+            {errorPagos && (
+              <p className="text-blood-400 text-sm font-display mb-4">
+                {errorPagos}
+              </p>
+            )}
+
+            {loadingPerfiles ? (
+              <div className="flex justify-center h-32 items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-blood-600 border-t-transparent" />
+              </div>
+            ) : perfiles.length === 0 ? (
+              <p className="text-center text-metal-600 text-sm py-8 font-display italic">
+                No hay usuarios registrados.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {perfiles.map((perfil) => {
+                  const edicion = pagosEdicion[perfil.id] || {
+                    confirmado: false,
+                    fecha: "",
+                  };
+                  const pagado = !!edicion.confirmado;
+                  const guardando = !!guardandoPago[perfil.id];
+
+                  return (
+                    <div
+                      key={perfil.id}
+                      className="bg-metal-950 border border-metal-800 rounded-lg p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                        <div>
+                          <p className="text-metal-100 font-display font-semibold tracking-wide">
+                            {perfil.username}
+                            {perfil.is_admin && (
+                              <span className="ml-2 bg-blood-700 text-white text-[10px] px-2 py-0.5 rounded font-display font-bold tracking-widest uppercase">
+                                ADMIN
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-metal-500 text-xs font-mono">
+                            Registrado:{" "}
+                            {format(new Date(perfil.created_at), "d MMM yyyy", {
+                              locale: es,
+                            })}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded border font-display font-semibold tracking-wider uppercase ${
+                            pagado
+                              ? "bg-green-900/40 text-green-400 border-green-800"
+                              : "bg-metal-800 text-metal-400 border-metal-700"
+                          }`}
+                        >
+                          {pagado ? "Pagado" : "Pendiente"}
+                        </span>
+                      </div>
+
+                      <div className="grid sm:grid-cols-[auto_1fr_auto] gap-3 items-center">
+                        <label className="inline-flex items-center gap-2 text-sm text-metal-300 font-display">
+                          <input
+                            type="checkbox"
+                            checked={pagado}
+                            onChange={(e) =>
+                              onTogglePago(perfil.id, e.target.checked)
+                            }
+                            className="h-4 w-4 accent-blood-600"
+                          />
+                          Pago confirmado
+                        </label>
+
+                        <input
+                          type="datetime-local"
+                          value={edicion.fecha}
+                          onChange={(e) =>
+                            onChangeFechaPago(perfil.id, e.target.value)
+                          }
+                          disabled={!pagado}
+                          className={`w-full bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600 ${
+                            !pagado ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                        />
+
+                        <button
+                          onClick={() => guardarPago(perfil.id)}
+                          disabled={guardando}
+                          className="bg-blood-700 hover:bg-blood-600 disabled:opacity-50 text-white font-display font-semibold py-2 px-4 rounded tracking-widest uppercase text-xs transition-colors"
+                        >
+                          {guardando ? "Guardando..." : "Guardar"}
+                        </button>
+                      </div>
+
+                      {perfil.paid_at && (
+                        <p className="text-metal-500 text-xs mt-2 font-mono">
+                          Fecha guardada:{" "}
+                          {format(
+                            new Date(perfil.paid_at),
+                            "d MMM yyyy HH:mm",
+                            { locale: es },
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

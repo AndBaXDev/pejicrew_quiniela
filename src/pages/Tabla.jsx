@@ -27,6 +27,7 @@ function formatearCRC(monto) {
 export default function Tabla() {
   const [tabla, setTabla] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [totalUsuarios, setTotalUsuarios] = useState(0);
 
   const totalRecaudado = tabla.length * APORTE_POR_USUARIO;
   const premiosTop = DISTRIBUCION_PREMIOS.map((parte) =>
@@ -39,7 +40,7 @@ export default function Tabla() {
 
       const [{ data: perfiles }, { data: partidos }, { data: predicciones }] =
         await Promise.all([
-          supabase.from("profiles").select("id, username"),
+          supabase.from("profiles").select("id, username, is_paid"),
           supabase
             .from("partidos")
             .select("id, goles_local_real, goles_visitante_real"),
@@ -51,10 +52,13 @@ export default function Tabla() {
         return;
       }
 
+      setTotalUsuarios(perfiles.length);
+      const perfilesPagados = perfiles.filter((perfil) => perfil.is_paid);
+
       const partidoMap = {};
       for (const p of partidos) partidoMap[p.id] = p;
 
-      const resultado = perfiles.map((perfil) => {
+      const resultado = perfilesPagados.map((perfil) => {
         const predsPerfil = predicciones.filter(
           (pr) => pr.user_id === perfil.id,
         );
@@ -118,8 +122,8 @@ export default function Tabla() {
             {formatearCRC(totalRecaudado)}
           </p>
           <p className="text-xs text-metal-500 mt-1">
-            {tabla.length} usuarios registrados x{" "}
-            {formatearCRC(APORTE_POR_USUARIO)}
+            {tabla.length} usuarios con pago confirmado de {totalUsuarios}{" "}
+            registrados x {formatearCRC(APORTE_POR_USUARIO)}
           </p>
           <div className="mt-3 flex gap-2 flex-wrap text-xs font-display tracking-wide">
             <span className="bg-metal-800 border border-metal-700 rounded px-2 py-1 text-metal-300">
