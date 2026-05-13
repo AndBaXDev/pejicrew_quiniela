@@ -38,14 +38,23 @@ export default function Tabla() {
     async function cargar() {
       setLoading(true);
 
-      const [{ data: perfiles }, { data: partidos }, { data: predicciones }] =
-        await Promise.all([
-          supabase.from("profiles").select("id, username, is_paid"),
-          supabase
-            .from("partidos")
-            .select("id, goles_local_real, goles_visitante_real"),
-          supabase.from("predicciones").select("*"),
-        ]);
+      const [
+        { data: perfiles },
+        { data: partidos },
+        { data: predicciones },
+        { data: preguntasBonus },
+        { data: respuestasBonus },
+      ] = await Promise.all([
+        supabase.from("profiles").select("id, username, is_paid"),
+        supabase
+          .from("partidos")
+          .select("id, goles_local_real, goles_visitante_real"),
+        supabase.from("predicciones").select("*"),
+        supabase
+          .from("preguntas_bonus")
+          .select("id, respuesta_correcta, puntos"),
+        supabase.from("respuestas_bonus").select("*"),
+      ]);
 
       if (!perfiles || !partidos || !predicciones) {
         setLoading(false);
@@ -57,6 +66,17 @@ export default function Tabla() {
 
       const partidoMap = {};
       for (const p of partidos) partidoMap[p.id] = p;
+
+      // Mapa bonus: pregunta_id -> respuesta_correcta normalizada
+      const bonusMap = {};
+      for (const pq of preguntasBonus || []) {
+        if (pq.respuesta_correcta) {
+          bonusMap[pq.id] = {
+            correcta: pq.respuesta_correcta.trim().toLowerCase(),
+            puntos: pq.puntos,
+          };
+        }
+      }
 
       const resultado = perfilesPagados.map((perfil) => {
         const predsPerfil = predicciones.filter(
@@ -84,7 +104,26 @@ export default function Tabla() {
           }
         }
 
-        return { ...perfil, puntos, exactos, resultados, jugados };
+        // Puntos bonus
+        let puntosBonus = 0;
+        const respBonus = (respuestasBonus || []).filter(
+          (r) => r.user_id === perfil.id,
+        );
+        for (const r of respBonus) {
+          const bonus = bonusMap[r.pregunta_id];
+          if (bonus && r.respuesta.trim().toLowerCase() === bonus.correcta) {
+            puntosBonus += bonus.puntos;
+          }
+        }
+
+        return {
+          ...perfil,
+          puntos: puntos + puntosBonus,
+          exactos,
+          resultados,
+          jugados,
+          puntosBonus,
+        };
       });
 
       resultado.sort((a, b) => b.puntos - a.puntos || b.exactos - a.exactos);
@@ -216,6 +255,7 @@ export default function Tabla() {
         <div className="mt-4 text-xs text-metal-600 flex gap-4 flex-wrap font-display tracking-wide">
           <span>🎯 Exactos (3 pts)</span>
           <span>✅ Resultado correcto (1 pt)</span>
+          <span>⭐ Bonus (2 pts c/u)</span>
         </div>
       </div>
     </div>

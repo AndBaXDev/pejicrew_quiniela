@@ -54,6 +54,18 @@ export default function Admin() {
   const [guardandoPago, setGuardandoPago] = useState({});
   const [errorPagos, setErrorPagos] = useState("");
 
+  // --- Bonus ---
+  const [preguntasBonus, setPreguntasBonus] = useState([]);
+  const [loadingBonus, setLoadingBonus] = useState(true);
+  const [nuevaPreguntaBonus, setNuevaPreguntaBonus] = useState("");
+  const [nuevaFechaLimiteBonus, setNuevaFechaLimiteBonus] = useState("");
+  const [creandoBonus, setCreandoBonus] = useState(false);
+  const [errorBonus, setErrorBonus] = useState("");
+  const [respCorrectaEdicion, setRespCorrectaEdicion] = useState({});
+  const [fechaLimiteEdicion, setFechaLimiteEdicion] = useState({});
+  const [guardandoRespCorrecta, setGuardandoRespCorrecta] = useState({});
+  const [eliminandoBonus, setEliminandoBonus] = useState({});
+
   const cargarPartidos = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase.from("partidos").select("*").order("fecha");
@@ -95,10 +107,76 @@ export default function Admin() {
     setLoadingPerfiles(false);
   }, []);
 
+  const cargarBonus = useCallback(async () => {
+    setLoadingBonus(true);
+    const { data } = await supabase
+      .from("preguntas_bonus")
+      .select("*")
+      .order("created_at");
+    const preguntas = data || [];
+    setPreguntasBonus(preguntas);
+    const mapaResp = {};
+    const mapaFecha = {};
+    for (const p of preguntas) {
+      mapaResp[p.id] = p.respuesta_correcta ?? "";
+      mapaFecha[p.id] = toDatetimeLocalValue(p.fecha_limite);
+    }
+    setRespCorrectaEdicion(mapaResp);
+    setFechaLimiteEdicion(mapaFecha);
+    setLoadingBonus(false);
+  }, []);
+
   useEffect(() => {
     cargarPartidos();
     cargarPerfiles();
-  }, [cargarPartidos, cargarPerfiles]);
+    cargarBonus();
+  }, [cargarPartidos, cargarPerfiles, cargarBonus]);
+
+  async function crearPreguntaBonus(e) {
+    e.preventDefault();
+    setErrorBonus("");
+    if (!nuevaPreguntaBonus.trim()) {
+      setErrorBonus("Escribe el texto de la pregunta.");
+      return;
+    }
+    setCreandoBonus(true);
+    const { error } = await supabase.from("preguntas_bonus").insert({
+      pregunta: nuevaPreguntaBonus.trim(),
+      fecha_limite: nuevaFechaLimiteBonus
+        ? new Date(nuevaFechaLimiteBonus).toISOString()
+        : null,
+    });
+    setCreandoBonus(false);
+    if (error) {
+      setErrorBonus("Error al crear pregunta: " + error.message);
+    } else {
+      setNuevaPreguntaBonus("");
+      setNuevaFechaLimiteBonus("");
+      cargarBonus();
+    }
+  }
+
+  async function guardarRespCorrectaBonus(preguntaId) {
+    const val = respCorrectaEdicion[preguntaId] ?? "";
+    const fechaVal = fechaLimiteEdicion[preguntaId] ?? "";
+    setGuardandoRespCorrecta((prev) => ({ ...prev, [preguntaId]: true }));
+    await supabase
+      .from("preguntas_bonus")
+      .update({
+        respuesta_correcta: val.trim() || null,
+        fecha_limite: fechaVal ? new Date(fechaVal).toISOString() : null,
+      })
+      .eq("id", preguntaId);
+    setGuardandoRespCorrecta((prev) => ({ ...prev, [preguntaId]: false }));
+    cargarBonus();
+  }
+
+  async function eliminarPreguntaBonus(preguntaId) {
+    setEliminandoBonus((prev) => ({ ...prev, [preguntaId]: true }));
+    await supabase.from("preguntas_bonus").delete().eq("id", preguntaId);
+    setEliminandoBonus((prev) => ({ ...prev, [preguntaId]: false }));
+    cargarBonus();
+  }
 
   async function crearPartido(e) {
     e.preventDefault();
@@ -285,6 +363,12 @@ export default function Admin() {
             className={tab === "pagos" ? tabActive : tabInactive}
           >
             Pagos
+          </button>
+          <button
+            onClick={() => setTab("bonus")}
+            className={tab === "bonus" ? tabActive : tabInactive}
+          >
+            ⭐ Bonus
           </button>
         </div>
 
@@ -627,6 +711,161 @@ export default function Admin() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === "bonus" && (
+          <div className="space-y-6">
+            {/* Crear nueva pregunta */}
+            <div className="bg-metal-900 rounded-xl border border-metal-700 p-6">
+              <h2 className="font-display font-bold text-metal-200 mb-4 tracking-widest uppercase text-sm">
+                Nueva Pregunta Bonus
+              </h2>
+              <form onSubmit={crearPreguntaBonus} className="space-y-3">
+                <textarea
+                  value={nuevaPreguntaBonus}
+                  onChange={(e) => setNuevaPreguntaBonus(e.target.value)}
+                  rows={2}
+                  className={inputClass + " resize-none"}
+                  placeholder="Ej: ¿Qué equipo ganará la Copa Mundial 2026?"
+                />
+                <div>
+                  <label className="block text-xs font-display font-semibold text-metal-400 mb-1 tracking-wider uppercase">
+                    Fecha límite para responder
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={nuevaFechaLimiteBonus}
+                    onChange={(e) => setNuevaFechaLimiteBonus(e.target.value)}
+                    className={inputClass}
+                  />
+                  <p className="text-metal-600 text-xs mt-1 font-display">
+                    Dejar vacío = sin límite
+                  </p>
+                </div>
+                {errorBonus && (
+                  <p className="text-blood-400 text-sm font-display">
+                    {errorBonus}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={creandoBonus}
+                  className="bg-blood-700 hover:bg-blood-600 disabled:opacity-50 text-white font-display font-semibold py-2 px-6 rounded tracking-widest uppercase text-sm transition-colors"
+                >
+                  {creandoBonus ? "Guardando..." : "Crear Pregunta"}
+                </button>
+              </form>
+            </div>
+
+            {/* Lista de preguntas */}
+            <div className="bg-metal-900 rounded-xl border border-metal-700 p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display font-bold text-metal-200 tracking-widest uppercase text-sm">
+                  Preguntas Existentes
+                </h2>
+                <button
+                  onClick={cargarBonus}
+                  className="text-xs bg-metal-800 border border-metal-600 hover:border-blood-700 text-metal-200 px-3 py-1.5 rounded transition-colors font-display font-semibold tracking-wider uppercase"
+                >
+                  Recargar
+                </button>
+              </div>
+
+              {loadingBonus ? (
+                <div className="flex justify-center h-24 items-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-blood-600 border-t-transparent" />
+                </div>
+              ) : preguntasBonus.length === 0 ? (
+                <p className="text-center text-metal-600 text-sm py-8 font-display italic">
+                  No hay preguntas bonus. Crea una arriba.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {preguntasBonus.map((pq) => (
+                    <div
+                      key={pq.id}
+                      className="bg-metal-950 border border-metal-800 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <p className="text-metal-100 font-display font-semibold text-sm leading-snug flex-1">
+                          ⭐ {pq.pregunta}
+                          <span className="ml-2 text-[10px] text-metal-500 font-mono font-normal">
+                            +{pq.puntos} pts
+                          </span>
+                        </p>
+                        <button
+                          onClick={() => eliminarPreguntaBonus(pq.id)}
+                          disabled={!!eliminandoBonus[pq.id]}
+                          className="text-metal-600 hover:text-blood-400 text-xs px-2 py-1 rounded transition-colors border border-transparent hover:border-blood-800 font-display tracking-wider uppercase flex-shrink-0"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            value={respCorrectaEdicion[pq.id] ?? ""}
+                            onChange={(e) =>
+                              setRespCorrectaEdicion((prev) => ({
+                                ...prev,
+                                [pq.id]: e.target.value,
+                              }))
+                            }
+                            className="flex-1 bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600 placeholder-metal-500"
+                            placeholder="Respuesta correcta (vacío = sin revelar)"
+                          />
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1">
+                            <label className="block text-[10px] font-display font-semibold text-metal-500 mb-1 tracking-wider uppercase">
+                              Fecha límite
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={fechaLimiteEdicion[pq.id] ?? ""}
+                              onChange={(e) =>
+                                setFechaLimiteEdicion((prev) => ({
+                                  ...prev,
+                                  [pq.id]: e.target.value,
+                                }))
+                              }
+                              className="w-full bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600"
+                            />
+                          </div>
+                          <button
+                            onClick={() => guardarRespCorrectaBonus(pq.id)}
+                            disabled={!!guardandoRespCorrecta[pq.id]}
+                            className="self-end flex-shrink-0 bg-green-800 hover:bg-green-700 disabled:opacity-50 text-white font-display font-semibold py-2 px-4 rounded tracking-widest uppercase text-xs transition-colors"
+                          >
+                            {guardandoRespCorrecta[pq.id] ? "..." : "Guardar"}
+                          </button>
+                        </div>
+                      </div>
+                      {pq.respuesta_correcta && (
+                        <p className="mt-2 text-xs text-green-400 font-display">
+                          ✅ Respuesta revelada:{" "}
+                          <strong>{pq.respuesta_correcta}</strong>
+                        </p>
+                      )}
+                      {pq.fecha_limite && (
+                        <p className="mt-1 text-xs text-metal-500 font-mono">
+                          ⏰ Límite:{" "}
+                          {format(
+                            new Date(pq.fecha_limite),
+                            "d MMM yyyy HH:mm",
+                            {
+                              locale: es,
+                            },
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

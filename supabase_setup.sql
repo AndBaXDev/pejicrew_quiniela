@@ -373,3 +373,85 @@ INSERT INTO public.partidos (equipo_local, equipo_visitante, fecha, fase) VALUES
   ('Panamá',               'Croacia',               '2026-06-23T17:00:00-06:00', 'grupos'),  --  5:00pm CST
   ('Panamá',               'Inglaterra',            '2026-06-27T15:00:00-06:00', 'grupos'),  --  3:00pm CST
   ('Croacia',              'Ghana',                 '2026-06-27T15:00:00-06:00', 'grupos');  --  3:00pm CST
+
+
+-- ──────────────────────────────────────────────────────────
+-- 8. PREGUNTAS BONUS
+--    Preguntas especiales (ej: campeón del mundial).
+--    Cada respuesta correcta vale 2 puntos extra.
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.preguntas_bonus (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pregunta            TEXT NOT NULL,
+  respuesta_correcta  TEXT,           -- NULL mientras no se revele la respuesta
+  puntos              INT NOT NULL DEFAULT 2,
+  fecha_limite        TIMESTAMPTZ,    -- NULL = sin fecha límite
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Migración para tablas ya existentes
+ALTER TABLE public.preguntas_bonus
+  ADD COLUMN IF NOT EXISTS fecha_limite TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS public.respuestas_bonus (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  pregunta_id UUID NOT NULL REFERENCES public.preguntas_bonus(id) ON DELETE CASCADE,
+  respuesta   TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, pregunta_id)
+);
+
+-- RLS: preguntas_bonus
+ALTER TABLE public.preguntas_bonus ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "preguntas_bonus_select_authenticated"
+  ON public.preguntas_bonus FOR SELECT
+  TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "preguntas_bonus_insert_admin" ON public.preguntas_bonus;
+CREATE POLICY "preguntas_bonus_insert_admin"
+  ON public.preguntas_bonus FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
+  );
+
+DROP POLICY IF EXISTS "preguntas_bonus_update_admin" ON public.preguntas_bonus;
+CREATE POLICY "preguntas_bonus_update_admin"
+  ON public.preguntas_bonus FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
+  );
+
+DROP POLICY IF EXISTS "preguntas_bonus_delete_admin" ON public.preguntas_bonus;
+CREATE POLICY "preguntas_bonus_delete_admin"
+  ON public.preguntas_bonus FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
+  );
+
+-- RLS: respuestas_bonus
+ALTER TABLE public.respuestas_bonus ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "respuestas_bonus_select_authenticated"
+  ON public.respuestas_bonus FOR SELECT
+  TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "respuestas_bonus_insert_own" ON public.respuestas_bonus;
+CREATE POLICY "respuestas_bonus_insert_own"
+  ON public.respuestas_bonus FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_paid = TRUE)
+  );
+
+DROP POLICY IF EXISTS "respuestas_bonus_update_own" ON public.respuestas_bonus;
+CREATE POLICY "respuestas_bonus_update_own"
+  ON public.respuestas_bonus FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_paid = TRUE))
+  WITH CHECK (auth.uid() = user_id AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_paid = TRUE));
