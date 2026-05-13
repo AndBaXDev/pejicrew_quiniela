@@ -73,6 +73,19 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <footer className="w-full text-center py-3 text-sm text-gray-500 border-t border-gray-200 mt-auto">
+          © {new Date().getFullYear()} Todos los derechos reservados. Creado por{" "}
+          <span className="font-semibold text-gray-700">WebClouds</span>
+          <br />
+          Contacto para desarrollos:{" "}
+          <a
+            href="mailto:asolano.sp@outlook.com"
+            className="underline hover:text-gray-700"
+          >
+            asolano.sp@outlook.com
+          </a>{" "}
+          · 8747-1560
+        </footer>
       </HashRouter>
     </AuthProvider>
   );
