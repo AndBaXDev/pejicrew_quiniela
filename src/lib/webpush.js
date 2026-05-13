@@ -83,12 +83,21 @@ export async function enviarNotificacionPush(titulo, cuerpo, url = '/') {
       return false;
     }
 
+    // Obtener JWT del usuario autenticado
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session?.access_token) {
+      console.error('❌ No hay sesión autenticada');
+      return false;
+    }
+
     const response = await fetch(
       `${supabaseUrl}/functions/v1/send-push-notification`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           title: titulo,
@@ -102,7 +111,8 @@ export async function enviarNotificacionPush(titulo, cuerpo, url = '/') {
       console.log('✅ Notificación push enviada');
       return true;
     } else {
-      console.error('❌ Error enviando notificación:', response.status);
+      const error = await response.json();
+      console.error('❌ Error enviando notificación:', error);
       return false;
     }
   } catch (err) {
