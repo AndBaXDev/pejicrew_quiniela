@@ -14,7 +14,7 @@ function calcularPuntos(pred_local, pred_visit, real_local, real_visit) {
 }
 
 const APORTE_POR_USUARIO = 5000;
-const DISTRIBUCION_PREMIOS = [0.5, 0.3, 0.2];
+const DISTRIBUCION_PREMIOS = [0.7, 0.2, 0.1];
 
 function formatearCRC(monto) {
   return new Intl.NumberFormat("es-CR", {

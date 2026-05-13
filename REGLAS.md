@@ -78,6 +78,22 @@ Las predicciones aplican para todas las fases:
 
 ---
 
+## 💰 Premios
+
+La participación tiene un costo de **₡5.000 por persona**. El pozo total se reparte entre los tres primeros lugares al finalizar el torneo.
+
+| Lugar        | Porcentaje | Ejemplo (10 participantes) |
+| ------------ | ---------- | -------------------------- |
+| 🥇 1.º lugar | **70%**    | ₡35.000                    |
+| 🥈 2.º lugar | **20%**    | ₡10.000                    |
+| 🥉 3.º lugar | **10%**    | ₡5.000                     |
+
+> 💡 El monto exacto de cada premio depende del número final de participantes con pago confirmado. Puedes consultar el pozo actualizado en la sección **Tabla** de la app.
+
+> ⚠️ **Solo participan en el pozo y en la tabla de posiciones los usuarios cuyo pago haya sido confirmado por el administrador.**
+
+---
+
 ## ❓ Preguntas frecuentes
 
 **¿Cuándo debo hacer mis predicciones?**  
