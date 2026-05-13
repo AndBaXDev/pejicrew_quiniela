@@ -16,6 +16,7 @@ import Partidos from "./pages/Partidos";
 import Tabla from "./pages/Tabla";
 import Admin from "./pages/Admin";
 import { HashRouter } from "react-router-dom";
+import { registrarPushNotifications } from "./lib/webpush";
 
 function AuthRedirector() {
   const { passwordRecovery } = useAuth();
@@ -30,11 +31,27 @@ function AuthRedirector() {
   return null;
 }
 
+// Componente para registrar push notifications
+function PushRegistrar() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      setTimeout(() => {
+        registrarPushNotifications();
+      }, 1000);
+    }
+  }, [user]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
         <AuthRedirector />
+        <PushRegistrar />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

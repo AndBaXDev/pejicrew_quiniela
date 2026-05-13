@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { enviarNotificacionPush } from "../lib/webpush";
 
 const FASES = [
   "grupos",
@@ -219,6 +220,20 @@ export default function Admin() {
       .update({ goles_local_real: gl, goles_visitante_real: gv })
       .eq("id", partidoId);
     setGuardandoRes((prev) => ({ ...prev, [partidoId]: false }));
+
+    // Obtener datos del partido para notificación
+    const { data: partido } = await supabase
+      .from("partidos")
+      .select("*")
+      .eq("id", partidoId)
+      .single();
+
+    if (partido) {
+      const titulo = "⚽ Resultado Registrado";
+      const cuerpo = `${partido.equipo_local} ${gl} - ${gv} ${partido.equipo_visitante}`;
+      await enviarNotificacionPush(titulo, cuerpo, "/#/");
+    }
+
     cargarPartidos();
   }
 
