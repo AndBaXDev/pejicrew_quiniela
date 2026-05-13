@@ -356,13 +356,13 @@ export default function Admin() {
             onClick={() => setTab("nuevo")}
             className={tab === "nuevo" ? tabActive : tabInactive}
           >
-            + Nuevo
+            ➕ Nuevo
           </button>
           <button
             onClick={() => setTab("pagos")}
             className={tab === "pagos" ? tabActive : tabInactive}
           >
-            Pagos
+            💵 Pagos
           </button>
           <button
             onClick={() => setTab("bonus")}
@@ -817,8 +817,8 @@ export default function Admin() {
                             placeholder="Respuesta correcta (vacío = sin revelar)"
                           />
                         </div>
-                        <div className="flex gap-2 items-center">
-                          <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                          <div className="flex-1 min-w-0">
                             <label className="block text-[10px] font-display font-semibold text-metal-500 mb-1 tracking-wider uppercase">
                               Fecha límite
                             </label>
@@ -831,15 +831,17 @@ export default function Admin() {
                                   [pq.id]: e.target.value,
                                 }))
                               }
-                              className="w-full bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600"
+                              className="w-full min-w-0 bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600"
                             />
                           </div>
                           <button
                             onClick={() => guardarRespCorrectaBonus(pq.id)}
                             disabled={!!guardandoRespCorrecta[pq.id]}
-                            className="self-end flex-shrink-0 bg-green-800 hover:bg-green-700 disabled:opacity-50 text-white font-display font-semibold py-2 px-4 rounded tracking-widest uppercase text-xs transition-colors"
+                            className="w-full sm:w-auto sm:flex-shrink-0 bg-green-800 hover:bg-green-700 disabled:opacity-50 text-white font-display font-semibold py-2 px-4 rounded tracking-widest uppercase text-xs transition-colors"
                           >
-                            {guardandoRespCorrecta[pq.id] ? "..." : "Guardar"}
+                            {guardandoRespCorrecta[pq.id]
+                              ? "..."
+                              : "💾 Guardar"}
                           </button>
                         </div>
                       </div>
