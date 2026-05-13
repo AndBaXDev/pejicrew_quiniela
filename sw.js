@@ -7,7 +7,7 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: '/logo.png',
     badge: '/logo.png',
-    data: { url: data.url || '/' },
+    data: { url: data.url || 'https://andbaxdev.github.io/pejicrew_quiniela/#/' },
     tag: 'quiniela-notification',
     requireInteraction: false,
   });
