@@ -24,7 +24,7 @@ export async function registrarPushNotifications() {
   }
 
   try {
-    const reg = await navigator.serviceWorker.register('/sw.js');
+    const reg = await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
     const permission = await Notification.requestPermission();
 
     if (permission !== 'granted') {
