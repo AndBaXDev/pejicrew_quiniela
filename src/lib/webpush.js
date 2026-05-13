@@ -77,10 +77,9 @@ export async function registrarPushNotifications() {
 export async function enviarNotificacionPush(titulo, cuerpo, url = '/') {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !anonKey) {
-      console.error('❌ Variables Supabase no configuradas');
+    if (!supabaseUrl) {
+      console.error('❌ VITE_SUPABASE_URL no configurada');
       return false;
     }
 
@@ -90,7 +89,6 @@ export async function enviarNotificacionPush(titulo, cuerpo, url = '/') {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${anonKey}`,
         },
         body: JSON.stringify({
           title: titulo,
