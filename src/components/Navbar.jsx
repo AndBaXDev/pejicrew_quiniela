@@ -22,8 +22,8 @@ export default function Navbar() {
   return (
     <nav className="bg-metal-900 border-b border-blood-800 shadow-lg">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between h-16 gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0 overflow-x-auto whitespace-nowrap">
             <Link to="/" className="flex items-center gap-2 mr-4">
               <img
                 src={logoSrc}
@@ -50,7 +50,7 @@ export default function Navbar() {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
             <span className="text-metal-400 text-sm hidden sm:block">
               {profile?.username || ""}
               {profile?.is_admin && (
@@ -61,13 +61,13 @@ export default function Navbar() {
             </span>
             <Link
               to="/change-password"
-              className="text-metal-400 hover:text-white text-sm border border-metal-600 hover:border-blood-600 px-3 py-1 rounded transition-colors hidden sm:block font-display tracking-wide"
+              className="text-metal-400 hover:text-white text-xs sm:text-sm border border-metal-600 hover:border-blood-600 px-2 sm:px-3 py-1 rounded transition-colors font-display tracking-wide"
             >
               Contraseña
             </Link>
             <button
               onClick={handleSignOut}
-              className="text-metal-400 hover:text-white text-sm border border-metal-600 hover:border-blood-600 px-3 py-1 rounded transition-colors font-display tracking-wide"
+              className="text-metal-400 hover:text-white text-xs sm:text-sm border border-metal-600 hover:border-blood-600 px-2 sm:px-3 py-1 rounded transition-colors font-display tracking-wide"
             >
               Salir
             </button>
