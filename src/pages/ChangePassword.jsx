@@ -37,26 +37,32 @@ export default function ChangePassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-green-800 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8">
+    <div
+      className="min-h-screen bg-metal-950 flex items-center justify-center px-4"
+      style={{
+        backgroundImage:
+          "radial-gradient(ellipse at top, #2a0000 0%, #080808 65%)",
+      }}
+    >
+      <div className="bg-metal-900 border border-metal-700 rounded-xl shadow-2xl w-full max-w-sm p-8">
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🔑</div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="font-metal text-3xl text-white tracking-widest">
             Cambiar contraseña
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="font-display text-sm text-blood-400 tracking-widest uppercase mt-1">
             Actualiza tu contraseña de acceso
           </p>
         </div>
 
         {success ? (
-          <div className="bg-green-50 border border-green-300 text-green-700 text-sm rounded-lg px-4 py-3 text-center">
+          <div className="bg-metal-800 border border-blood-800 text-blood-300 text-sm rounded-lg px-4 py-3 text-center font-display tracking-wide">
             ✅ Contraseña actualizada correctamente. Redirigiendo...
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-display font-semibold text-metal-300 mb-1 tracking-widest uppercase">
                 Nueva contraseña
               </label>
               <input
@@ -64,12 +70,12 @@ export default function ChangePassword() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600 placeholder-metal-500"
                 placeholder="Mínimo 6 caracteres"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-display font-semibold text-metal-300 mb-1 tracking-widest uppercase">
                 Confirmar contraseña
               </label>
               <input
@@ -77,13 +83,13 @@ export default function ChangePassword() {
                 required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600 placeholder-metal-500"
                 placeholder="Repite la contraseña"
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-300 text-red-700 text-sm rounded-lg px-3 py-2">
+              <div className="bg-blood-900/40 border border-blood-700 text-blood-300 text-sm rounded px-3 py-2">
                 {error}
               </div>
             )}
@@ -91,7 +97,7 @@ export default function ChangePassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white font-semibold py-2 rounded-lg transition-colors"
+              className="w-full bg-blood-700 hover:bg-blood-600 disabled:opacity-50 text-white font-display font-semibold tracking-widest uppercase py-2.5 rounded transition-colors text-sm"
             >
               {loading ? "Guardando..." : "Actualizar contraseña"}
             </button>
@@ -99,7 +105,7 @@ export default function ChangePassword() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="w-full text-sm text-gray-500 hover:text-gray-700 py-1 transition-colors"
+              className="w-full text-sm text-metal-400 hover:text-blood-400 py-1 transition-colors font-display tracking-wide"
             >
               ← Cancelar
             </button>
