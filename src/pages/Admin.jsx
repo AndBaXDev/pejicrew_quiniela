@@ -136,13 +136,14 @@ export default function Admin() {
   async function crearPreguntaBonus(e) {
     e.preventDefault();
     setErrorBonus("");
-    if (!nuevaPreguntaBonus.trim()) {
+    const pregunta = nuevaPreguntaBonus.trim();
+    if (!pregunta) {
       setErrorBonus("Escribe el texto de la pregunta.");
       return;
     }
     setCreandoBonus(true);
     const { error } = await supabase.from("preguntas_bonus").insert({
-      pregunta: nuevaPreguntaBonus.trim(),
+      pregunta,
       fecha_limite: nuevaFechaLimiteBonus
         ? new Date(nuevaFechaLimiteBonus).toISOString()
         : null,
@@ -151,6 +152,11 @@ export default function Admin() {
     if (error) {
       setErrorBonus("Error al crear pregunta: " + error.message);
     } else {
+      await enviarNotificacionPush(
+        "⭐ Ya está disponible una nueva pregunta bonus",
+        pregunta,
+        "https://andbaxdev.github.io/pejicrew_quiniela/#/",
+      );
       setNuevaPreguntaBonus("");
       setNuevaFechaLimiteBonus("");
       cargarBonus();
