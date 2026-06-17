@@ -59,11 +59,13 @@ export default function Admin() {
   const [preguntasBonus, setPreguntasBonus] = useState([]);
   const [loadingBonus, setLoadingBonus] = useState(true);
   const [nuevaPreguntaBonus, setNuevaPreguntaBonus] = useState("");
+  const [nuevaTipoBonus, setNuevaTipoBonus] = useState("texto");
   const [nuevaFechaLimiteBonus, setNuevaFechaLimiteBonus] = useState("");
   const [creandoBonus, setCreandoBonus] = useState(false);
   const [errorBonus, setErrorBonus] = useState("");
   const [respCorrectaEdicion, setRespCorrectaEdicion] = useState({});
   const [fechaLimiteEdicion, setFechaLimiteEdicion] = useState({});
+  const [tipoEdicion, setTipoEdicion] = useState({});
   const [guardandoRespCorrecta, setGuardandoRespCorrecta] = useState({});
   const [eliminandoBonus, setEliminandoBonus] = useState({});
 
@@ -118,12 +120,15 @@ export default function Admin() {
     setPreguntasBonus(preguntas);
     const mapaResp = {};
     const mapaFecha = {};
+    const mapaTipo = {};
     for (const p of preguntas) {
       mapaResp[p.id] = p.respuesta_correcta ?? "";
       mapaFecha[p.id] = toDatetimeLocalValue(p.fecha_limite);
+      mapaTipo[p.id] = p.tipo ?? "texto";
     }
     setRespCorrectaEdicion(mapaResp);
     setFechaLimiteEdicion(mapaFecha);
+    setTipoEdicion(mapaTipo);
     setLoadingBonus(false);
   }, []);
 
@@ -144,6 +149,7 @@ export default function Admin() {
     setCreandoBonus(true);
     const { error } = await supabase.from("preguntas_bonus").insert({
       pregunta,
+      tipo: nuevaTipoBonus,
       fecha_limite: nuevaFechaLimiteBonus
         ? new Date(nuevaFechaLimiteBonus).toISOString()
         : null,
@@ -158,6 +164,7 @@ export default function Admin() {
         "https://andbaxdev.github.io/pejicrew_quiniela/#/",
       );
       setNuevaPreguntaBonus("");
+      setNuevaTipoBonus("texto");
       setNuevaFechaLimiteBonus("");
       cargarBonus();
     }
@@ -172,6 +179,7 @@ export default function Admin() {
       .update({
         respuesta_correcta: val.trim() || null,
         fecha_limite: fechaVal ? new Date(fechaVal).toISOString() : null,
+        tipo: tipoEdicion[preguntaId] ?? "texto",
       })
       .eq("id", preguntaId);
     setGuardandoRespCorrecta((prev) => ({ ...prev, [preguntaId]: false }));
@@ -756,6 +764,39 @@ export default function Admin() {
                 />
                 <div>
                   <label className="block text-xs font-display font-semibold text-metal-400 mb-1 tracking-wider uppercase">
+                    Tipo de respuesta
+                  </label>
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="tipoBonus"
+                        value="texto"
+                        checked={nuevaTipoBonus === "texto"}
+                        onChange={() => setNuevaTipoBonus("texto")}
+                        className="accent-blood-600"
+                      />
+                      <span className="text-xs font-display text-metal-300 uppercase tracking-wider">
+                        Texto
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="tipoBonus"
+                        value="numero"
+                        checked={nuevaTipoBonus === "numero"}
+                        onChange={() => setNuevaTipoBonus("numero")}
+                        className="accent-blood-600"
+                      />
+                      <span className="text-xs font-display text-metal-300 uppercase tracking-wider">
+                        Número
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-display font-semibold text-metal-400 mb-1 tracking-wider uppercase">
                     Fecha límite para responder
                   </label>
                   <input
@@ -818,6 +859,17 @@ export default function Admin() {
                           <span className="ml-2 text-[10px] text-metal-500 font-mono font-normal">
                             +{pq.puntos} pts
                           </span>
+                          <span
+                            className={`ml-2 text-[10px] font-display font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                              (pq.tipo ?? "texto") === "numero"
+                                ? "bg-blue-900/50 text-blue-400 border border-blue-800"
+                                : "bg-metal-800 text-metal-400 border border-metal-700"
+                            }`}
+                          >
+                            {(pq.tipo ?? "texto") === "numero"
+                              ? "# número"
+                              : "T texto"}
+                          </span>
                         </p>
                         <button
                           onClick={() => eliminarPreguntaBonus(pq.id)}
@@ -830,7 +882,16 @@ export default function Admin() {
                       <div className="space-y-2">
                         <div className="flex gap-2 items-center">
                           <input
-                            type="text"
+                            type={
+                              (pq.tipo ?? "texto") === "numero"
+                                ? "number"
+                                : "text"
+                            }
+                            inputMode={
+                              (pq.tipo ?? "texto") === "numero"
+                                ? "numeric"
+                                : undefined
+                            }
                             value={respCorrectaEdicion[pq.id] ?? ""}
                             onChange={(e) =>
                               setRespCorrectaEdicion((prev) => ({
@@ -841,6 +902,33 @@ export default function Admin() {
                             className="flex-1 bg-metal-800 border border-metal-600 rounded px-3 py-2 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-blood-600 focus:border-blood-600 placeholder-metal-500"
                             placeholder="Respuesta correcta (vacío = sin revelar)"
                           />
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setTipoEdicion((prev) => ({
+                                  ...prev,
+                                  [pq.id]:
+                                    (prev[pq.id] ?? pq.tipo ?? "texto") ===
+                                    "texto"
+                                      ? "numero"
+                                      : "texto",
+                                }))
+                              }
+                              title="Cambiar tipo de respuesta"
+                              className={`text-[10px] font-display font-semibold px-2 py-1 rounded uppercase tracking-wider border transition-colors ${
+                                (tipoEdicion[pq.id] ?? pq.tipo ?? "texto") ===
+                                "numero"
+                                  ? "bg-blue-900/50 text-blue-400 border-blue-800 hover:bg-blue-900"
+                                  : "bg-metal-800 text-metal-400 border-metal-700 hover:border-blood-700"
+                              }`}
+                            >
+                              {(tipoEdicion[pq.id] ?? pq.tipo ?? "texto") ===
+                              "numero"
+                                ? "# Número"
+                                : "T Texto"}
+                            </button>
+                          </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
                           <div className="flex-1 min-w-0 overflow-hidden">

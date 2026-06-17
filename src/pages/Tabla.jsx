@@ -5,6 +5,9 @@ import Navbar from "../components/Navbar";
 function calcularPuntos(pred_local, pred_visit, real_local, real_visit) {
   if (real_local === null || real_visit === null) return 0;
   if (pred_local === real_local && pred_visit === real_visit) return 3;
+  // si el resultado es un empate, pero el usuario no acertó el marcador exacto, igual se le da 1 punto
+  if (real_local === real_visit && pred_local === pred_visit) return 1;
+
   const predRes =
     pred_local > pred_visit ? "L" : pred_local < pred_visit ? "V" : "E";
   const realRes =

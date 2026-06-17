@@ -690,8 +690,11 @@ export default function Partidos() {
                       Date.now() >= new Date(pq.fecha_limite).getTime();
                     const correcta =
                       pq.respuesta_correcta &&
-                      respuesta?.respuesta?.trim().toLowerCase() ===
-                        pq.respuesta_correcta.trim().toLowerCase();
+                      ((pq.tipo ?? "texto") === "numero"
+                        ? parseFloat(respuesta?.respuesta) ===
+                          parseFloat(pq.respuesta_correcta)
+                        : respuesta?.respuesta?.trim().toLowerCase() ===
+                          pq.respuesta_correcta.trim().toLowerCase());
                     const incorrecta =
                       pq.respuesta_correcta && yaRespondida && !correcta;
 
@@ -778,7 +781,16 @@ export default function Partidos() {
                         ) : (
                           <div className="flex items-center gap-2 flex-wrap">
                             <input
-                              type="text"
+                              type={
+                                (pq.tipo ?? "texto") === "numero"
+                                  ? "number"
+                                  : "text"
+                              }
+                              inputMode={
+                                (pq.tipo ?? "texto") === "numero"
+                                  ? "numeric"
+                                  : undefined
+                              }
                               value={editandoBonus[pq.id]}
                               onChange={(e) =>
                                 setEditandoBonus((prev) => ({
@@ -786,7 +798,11 @@ export default function Partidos() {
                                   [pq.id]: e.target.value,
                                 }))
                               }
-                              placeholder="Tu respuesta..."
+                              placeholder={
+                                (pq.tipo ?? "texto") === "numero"
+                                  ? "Ej: 42"
+                                  : "Tu respuesta..."
+                              }
                               className="flex-1 min-w-[160px] bg-metal-800 border border-yellow-900 rounded px-3 py-1.5 text-sm text-metal-100 focus:outline-none focus:ring-2 focus:ring-yellow-700"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter")

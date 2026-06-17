@@ -383,6 +383,7 @@ INSERT INTO public.partidos (equipo_local, equipo_visitante, fecha, fase) VALUES
 CREATE TABLE IF NOT EXISTS public.preguntas_bonus (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   pregunta            TEXT NOT NULL,
+  tipo                TEXT NOT NULL DEFAULT 'texto', -- 'texto' | 'numero'
   respuesta_correcta  TEXT,           -- NULL mientras no se revele la respuesta
   puntos              INT NOT NULL DEFAULT 2,
   fecha_limite        TIMESTAMPTZ,    -- NULL = sin fecha límite
@@ -392,6 +393,9 @@ CREATE TABLE IF NOT EXISTS public.preguntas_bonus (
 -- Migración para tablas ya existentes
 ALTER TABLE public.preguntas_bonus
   ADD COLUMN IF NOT EXISTS fecha_limite TIMESTAMPTZ;
+
+ALTER TABLE public.preguntas_bonus
+  ADD COLUMN IF NOT EXISTS tipo TEXT NOT NULL DEFAULT 'texto';
 
 CREATE TABLE IF NOT EXISTS public.respuestas_bonus (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
