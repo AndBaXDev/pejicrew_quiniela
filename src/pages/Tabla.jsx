@@ -38,25 +38,57 @@ export default function Tabla() {
   );
 
   useEffect(() => {
+    // 1. Función auxiliar para saltarse el límite de las 1000 filas mediante paginación
+    async function obtenerTodasLasPredicciones() {
+      let contenido = [];
+      let pagina = 0;
+      const tamañoPagina = 1000;
+      let tieneMas = true;
+
+      while (tieneMas) {
+        const desde = pagina * tamañoPagina;
+        const hasta = desde + tamañoPagina - 1;
+
+        const { data, error } = await supabase
+          .from("predicciones")
+          .select("*")
+          .range(desde, hasta);
+
+        if (error) {
+          console.error("Error al paginar predicciones:", error);
+          break;
+        }
+
+        if (data && data.length > 0) {
+          contenido = [...contenido, ...data];
+          pagina++;
+          if (data.length < tamañoPagina) tieneMas = false;
+        } else {
+          tieneMas = false;
+        }
+      }
+      return contenido;
+    }
+
     async function cargar() {
       setLoading(true);
 
       const [
         { data: perfiles },
         { data: partidos },
-        { data: predicciones },
         { data: preguntasBonus },
         { data: respuestasBonus },
+        predicciones,
       ] = await Promise.all([
         supabase.from("profiles").select("id, username, is_paid"),
         supabase
           .from("partidos")
           .select("id, goles_local_real, goles_visitante_real"),
-        supabase.from("predicciones").select("*"),
         supabase
           .from("preguntas_bonus")
           .select("id, respuesta_correcta, puntos"),
         supabase.from("respuestas_bonus").select("*"),
+        obtenerTodasLasPredicciones(), // <-- Llamada a la función de arriba
       ]);
 
       if (!perfiles || !partidos || !predicciones) {
@@ -85,6 +117,7 @@ export default function Tabla() {
         const predsPerfil = predicciones.filter(
           (pr) => pr.user_id === perfil.id,
         );
+
         let puntos = 0;
         let exactos = 0;
         let resultados = 0;
@@ -93,13 +126,16 @@ export default function Tabla() {
         for (const pred of predsPerfil) {
           const partido = partidoMap[pred.partido_id];
           if (!partido) continue;
+
           const pts = calcularPuntos(
             pred.goles_local,
             pred.goles_visitante,
             partido.goles_local_real,
             partido.goles_visitante_real,
           );
+
           puntos += pts;
+
           if (partido.goles_local_real !== null) {
             jugados++;
             if (pts === 3) exactos++;
